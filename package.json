@@ -1,0 +1,14 @@
+{
+  "name": "@vawai/shared-chat-ui",
+  "version": "1.0.0",
+  "description": "Shared Vue 3 chat UI components for lannisters and kingslanding",
+  "type": "module",
+  "exports": {
+    "./components/*": "./src/components/*",
+    "./services/*": "./src/services/*"
+  },
+  "peerDependencies": {
+    "vue": "^3.4.0",
+    "@heroicons/vue": "^2.2.0"
+  }
+}
