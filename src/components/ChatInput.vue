@@ -28,9 +28,6 @@
         </svg>
       </button>
     </div>
-    <p class="text-xs text-center text-gray-400 dark:text-gray-600 mt-2">
-      Kingslanding yapay zeka destekli yanıtlar üretir
-    </p>
   </div>
 </template>
 

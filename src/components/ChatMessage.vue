@@ -1,10 +1,5 @@
 <template>
-  <div
-    :class="[
-      'group py-4 animate-fade-in-up',
-      role === 'user' ? '' : '',
-    ]"
-  >
+  <div class="group py-4">
     <div class="flex gap-4">
       <!-- Avatar -->
       <div class="flex-shrink-0">
