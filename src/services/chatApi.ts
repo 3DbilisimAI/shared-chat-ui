@@ -77,8 +77,10 @@ export interface TokenEvent {
 
 export interface DoneEvent {
   type: 'done'
-  thread_id: string
+  thread_id?: string
+  response?: string
   message?: string
+  answer_source?: string
 }
 
 export interface ErrorEvent {
