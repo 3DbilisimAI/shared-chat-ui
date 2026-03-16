@@ -57,6 +57,7 @@ function send() {
   display: flex;
   align-items: flex-end;
   gap: 0.5rem;
+  margin: 0.75rem;
   border-radius: 1rem;
   border: 1px solid rgb(229 231 235);
   background: rgb(249 250 251);

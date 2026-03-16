@@ -1,6 +1,6 @@
 <template>
   <div class="chat-sidebar">
-    <!-- New Chat button -->
+    <!-- Header: close + new chat -->
     <div class="chat-sidebar__header">
       <button class="chat-sidebar__new-btn" @click="emit('new-thread')">
         <PlusIcon class="w-4 h-4" />
@@ -36,28 +36,38 @@
 
     <!-- Footer -->
     <div class="chat-sidebar__footer">
+      <button class="chat-sidebar__collapse-btn" @click="emit('close')">
+        <ChevronDoubleLeftIcon class="w-4 h-4" />
+      </button>
       <div class="chat-sidebar__brand">
-        <div class="chat-sidebar__brand-icon">K</div>
-        <span class="chat-sidebar__brand-name">Kingslanding</span>
+        <div class="chat-sidebar__brand-icon">{{ brandInitial }}</div>
+        <span class="chat-sidebar__brand-name">{{ brandName }}</span>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { PlusIcon, TrashIcon, ChatBubbleLeftIcon } from '@heroicons/vue/24/solid'
+import { computed } from 'vue'
+import { PlusIcon, TrashIcon, ChatBubbleLeftIcon, ChevronDoubleLeftIcon } from '@heroicons/vue/24/solid'
 import type { Thread } from '../services/chatApi'
 
-defineProps<{
+const props = withDefaults(defineProps<{
   threads: Thread[]
   activeThreadId?: string
-}>()
+  brandName?: string
+}>(), {
+  brandName: 'Chat',
+})
 
 const emit = defineEmits<{
   'new-thread': []
   'select-thread': [threadId: string]
   'delete-thread': [threadId: string]
+  'close': []
 }>()
+
+const brandInitial = computed(() => props.brandName.charAt(0).toUpperCase())
 
 function formatDate(dateStr: string): string {
   try {
@@ -77,21 +87,22 @@ function formatDate(dateStr: string): string {
   display: flex;
   flex-direction: column;
   height: 100%;
-  width: var(--sidebar-width, clamp(220px, 18vw, 320px));
+  width: 260px;
+  flex-shrink: 0;
+  border-right: 1px solid rgb(31 41 55);
   background: rgb(3 7 18);
   color: rgb(156 163 175);
   font-size: 0.875rem;
 }
 
-/* ── Header ── */
-.chat-sidebar__header { padding: 0.75rem; }
+.chat-sidebar__header { padding: 0.5rem 0.75rem; }
 
 .chat-sidebar__new-btn {
   width: 100%;
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.625rem 0.75rem;
+  padding: 0.5rem 0.75rem;
   border-radius: 0.75rem;
   border: 1px solid rgb(55 65 81);
   color: rgb(229 231 235);
@@ -103,7 +114,6 @@ function formatDate(dateStr: string): string {
   border-color: rgb(75 85 99);
 }
 
-/* ── Thread list ── */
 .chat-sidebar__list {
   flex: 1;
   overflow-y: auto;
@@ -114,11 +124,11 @@ function formatDate(dateStr: string): string {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.625rem 0.75rem;
+  padding: 0.5rem 0.75rem;
   border-radius: 0.75rem;
   cursor: pointer;
   transition: all 150ms;
-  margin-bottom: 2px;
+  margin-bottom: 1px;
 }
 .chat-sidebar__thread:hover {
   background: rgba(31 41 55 / 0.6);
@@ -161,31 +171,45 @@ function formatDate(dateStr: string): string {
   padding: 2rem 0;
 }
 
-/* ── Footer ── */
 .chat-sidebar__footer {
-  padding: 0.75rem;
+  padding: 0.5rem 0.75rem;
   border-top: 1px solid rgb(31 41 55);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chat-sidebar__collapse-btn {
+  padding: 0.375rem;
+  border-radius: 0.5rem;
+  color: rgb(107 114 128);
+  transition: all 150ms;
+}
+.chat-sidebar__collapse-btn:hover {
+  background: rgb(31 41 55);
+  color: rgb(209 213 219);
 }
 
 .chat-sidebar__brand {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.75rem;
+  gap: 0.5rem;
+  min-width: 0;
 }
 
 .chat-sidebar__brand-icon {
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 1.5rem;
+  height: 1.5rem;
   border-radius: 9999px;
   background: linear-gradient(135deg, rgb(59 130 246), rgb(37 99 235));
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 0.75rem;
+  font-size: 0.625rem;
   font-weight: 600;
+  flex-shrink: 0;
 }
 
 .chat-sidebar__brand-name {
@@ -193,5 +217,6 @@ function formatDate(dateStr: string): string {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 0.8125rem;
 }
 </style>
