@@ -46,7 +46,7 @@
 
 <script setup lang="ts">
 import { PlusIcon, TrashIcon, ChatBubbleLeftIcon } from '@heroicons/vue/24/solid'
-import type { Thread } from '@/services/chatApi'
+import type { Thread } from '../services/chatApi'
 
 defineProps<{
   threads: Thread[]
