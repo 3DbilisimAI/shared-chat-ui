@@ -1,9 +1,9 @@
 <template>
-  <div class="flex flex-col h-full bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 w-64 flex-shrink-0">
+  <div class="flex flex-col h-full bg-gray-950 dark:bg-gray-950 w-64 flex-shrink-0">
     <!-- New Chat button -->
-    <div class="p-3 border-b border-gray-200 dark:border-gray-700">
+    <div class="p-3">
       <button
-        class="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
+        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-gray-700 hover:bg-gray-800 text-gray-200 text-sm font-medium transition-all duration-200 hover:border-gray-600"
         @click="emit('new-thread')"
       >
         <PlusIcon class="w-4 h-4" />
@@ -12,34 +12,49 @@
     </div>
 
     <!-- Thread list -->
-    <div class="flex-1 overflow-y-auto py-2">
-      <div
-        v-for="thread in threads"
-        :key="thread.thread_id"
-        :class="[
-          'group relative flex items-center gap-2 mx-2 mb-1 px-3 py-2.5 rounded-xl cursor-pointer transition-colors text-sm',
-          thread.thread_id === activeThreadId
-            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-            : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300',
-        ]"
-        @click="emit('select-thread', thread.thread_id)"
-      >
-        <ChatBubbleLeftIcon class="w-4 h-4 flex-shrink-0 opacity-60" />
-        <span class="flex-1 truncate">{{ thread.title || 'Sohbet' }}</span>
-        <span v-if="thread.updated_at" class="text-xs opacity-50 flex-shrink-0 group-hover:hidden">
-          {{ formatDate(thread.updated_at) }}
-        </span>
-        <button
-          class="hidden group-hover:flex items-center justify-center w-5 h-5 rounded hover:text-red-500 transition-colors flex-shrink-0"
-          @click.stop="emit('delete-thread', thread.thread_id)"
+    <div class="flex-1 overflow-y-auto px-2 py-1 space-y-0.5">
+      <TransitionGroup name="thread-list">
+        <div
+          v-for="thread in threads"
+          :key="thread.thread_id"
+          :class="[
+            'group relative flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 text-sm',
+            thread.thread_id === activeThreadId
+              ? 'bg-gray-800 text-white'
+              : 'hover:bg-gray-800/60 text-gray-400 hover:text-gray-200',
+          ]"
+          @click="emit('select-thread', thread.thread_id)"
         >
-          <TrashIcon class="w-3.5 h-3.5" />
-        </button>
-      </div>
+          <ChatBubbleLeftIcon class="w-4 h-4 flex-shrink-0 opacity-60" />
+          <span class="flex-1 truncate">{{ thread.title || 'Sohbet' }}</span>
+          <span
+            v-if="thread.updated_at"
+            class="text-xs opacity-40 flex-shrink-0 group-hover:hidden transition-opacity"
+          >
+            {{ formatDate(thread.updated_at) }}
+          </span>
+          <button
+            class="hidden group-hover:flex items-center justify-center w-6 h-6 rounded-lg hover:bg-gray-700 text-gray-500 hover:text-red-400 transition-all flex-shrink-0"
+            @click.stop="emit('delete-thread', thread.thread_id)"
+          >
+            <TrashIcon class="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </TransitionGroup>
 
-      <p v-if="threads.length === 0" class="text-center text-gray-400 dark:text-gray-600 text-xs py-8">
+      <p v-if="threads.length === 0" class="text-center text-gray-600 text-xs py-8">
         Henüz sohbet yok
       </p>
+    </div>
+
+    <!-- Footer -->
+    <div class="p-3 border-t border-gray-800">
+      <div class="flex items-center gap-3 px-3 py-2 rounded-xl text-gray-400 text-sm">
+        <div class="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xs font-medium">
+          K
+        </div>
+        <span class="truncate text-gray-300">Kingslanding</span>
+      </div>
     </div>
   </div>
 </template>
