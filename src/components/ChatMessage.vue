@@ -1,25 +1,36 @@
 <template>
-  <div class="group py-4">
-    <div class="flex gap-4">
-      <!-- Avatar -->
+  <div
+    :class="[
+      'group py-3',
+      role === 'user' ? 'flex justify-end' : 'flex justify-start',
+    ]"
+  >
+    <!-- User message: right-aligned bubble -->
+    <div v-if="role === 'user'" class="flex gap-3 max-w-[85%] flex-row-reverse">
       <div class="flex-shrink-0">
-        <div
-          :class="[
-            'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium',
-            role === 'user'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white',
-          ]"
-        >
-          {{ role === 'user' ? 'S' : 'AI' }}
+        <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-sm font-medium text-white">
+          S
         </div>
       </div>
-
-      <!-- Content -->
-      <div class="flex-1 min-w-0">
-        <p class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">
-          {{ role === 'user' ? 'Sen' : 'Kingslanding' }}
+      <div>
+        <div class="bg-blue-600 text-white rounded-2xl rounded-br-md px-4 py-2.5 shadow-sm">
+          <p class="whitespace-pre-wrap text-sm leading-relaxed">{{ content }}</p>
+        </div>
+        <p v-if="timestamp" class="text-xs text-gray-400 dark:text-gray-500 mt-1 text-right opacity-0 group-hover:opacity-100 transition-opacity">
+          {{ formattedTime }}
         </p>
+      </div>
+    </div>
+
+    <!-- Assistant message: left-aligned flat -->
+    <div v-else class="flex gap-3 max-w-[85%]">
+      <div class="flex-shrink-0">
+        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-sm font-medium text-white">
+          AI
+        </div>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Kingslanding</p>
 
         <!-- Typing indicator -->
         <div v-if="isTyping" class="flex items-center gap-1.5 py-2">
@@ -39,29 +50,28 @@
           <div
             v-if="hasMarkdown"
             v-html="renderedContent"
-            class="prose-chat text-sm text-gray-700 dark:text-gray-300"
+            class="prose-chat text-sm text-gray-800 dark:text-gray-200"
           />
-          <p v-else class="whitespace-pre-wrap text-sm leading-relaxed text-gray-700 dark:text-gray-300">{{ content }}</p>
+          <p v-else class="whitespace-pre-wrap text-sm leading-relaxed text-gray-800 dark:text-gray-200">{{ content }}</p>
         </template>
 
-        <!-- Footer: timestamp + actions -->
+        <!-- Footer: timestamp + copy -->
         <div
           v-if="!isTyping && content"
-          class="flex items-center gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+          class="flex items-center gap-2 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
         >
           <span v-if="timestamp" class="text-xs text-gray-400 dark:text-gray-500">
             {{ formattedTime }}
           </span>
           <button
-            v-if="role === 'assistant'"
             class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             title="Kopyala"
             @click="copyContent"
           >
-            <svg v-if="!copied" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg v-if="!copied" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
-            <svg v-else class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg v-else class="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
           </button>
@@ -93,7 +103,7 @@ const renderedContent = computed(() => {
   // Escape HTML
   text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
-  // Code blocks with copy button
+  // Code blocks
   text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_match, lang, code) => {
     const trimmedCode = code.trim()
     return `<pre><code class="language-${lang || 'text'}">${trimmedCode}</code></pre>`
@@ -141,7 +151,7 @@ const renderedContent = computed(() => {
     return html
   })
 
-  // Line breaks (but not inside pre/code)
+  // Line breaks
   text = text.replace(/(?<!\>)\n(?!\<)/g, '<br>')
 
   return text
@@ -162,7 +172,6 @@ async function copyContent() {
     copied.value = true
     setTimeout(() => { copied.value = false }, 2000)
   } catch {
-    // Fallback
     const el = document.createElement('textarea')
     el.value = props.content
     document.body.appendChild(el)

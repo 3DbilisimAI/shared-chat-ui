@@ -1,70 +1,114 @@
 <template>
-  <div class="px-3 py-3">
-    <div class="relative flex items-end gap-2 rounded-2xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 shadow-sm focus-within:border-blue-400 dark:focus-within:border-blue-500 focus-within:shadow-md transition-all duration-200">
-      <textarea
-        ref="textareaRef"
-        v-model="text"
-        :disabled="disabled"
-        rows="1"
-        placeholder="Mesajınızı yazın..."
-        class="flex-1 resize-none bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 text-sm focus:outline-none disabled:opacity-50 overflow-y-auto"
-        :style="{ height: textareaHeight, maxHeight: '160px' }"
-        @keydown.enter.exact.prevent="send"
-        @keydown.shift.enter="newline"
-        @input="resize"
-      />
-      <button
-        :disabled="disabled || !text.trim()"
-        :class="[
-          'flex-shrink-0 p-2.5 m-1.5 rounded-xl transition-all duration-200',
-          text.trim()
-            ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow-md scale-100'
-            : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 scale-95',
-        ]"
-        @click="send"
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-        </svg>
-      </button>
-    </div>
+  <div class="chat-input-wrap">
+    <textarea
+      ref="textareaRef"
+      v-model="text"
+      :disabled="disabled"
+      rows="1"
+      placeholder="Mesajınızı yazın..."
+      class="chat-input-wrap__textarea"
+      @keydown.enter.exact.prevent="send"
+      @keydown.shift.enter="newline"
+      @input="resize"
+    />
+    <button
+      :disabled="disabled || !text.trim()"
+      :class="['chat-input-wrap__send', { 'chat-input-wrap__send--active': text.trim() }]"
+      @click="send"
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+      </svg>
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
 
-defineProps<{
-  disabled?: boolean
-}>()
-
-const emit = defineEmits<{
-  send: [message: string]
-}>()
+defineProps<{ disabled?: boolean }>()
+const emit = defineEmits<{ send: [message: string] }>()
 
 const text = ref('')
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
-const textareaHeight = ref('auto')
 
 function resize() {
   nextTick(() => {
     const el = textareaRef.value
     if (!el) return
     el.style.height = 'auto'
-    const newHeight = Math.min(el.scrollHeight, 160)
-    textareaHeight.value = `${newHeight}px`
+    el.style.height = el.scrollHeight + 'px'
   })
 }
 
-function newline() {
-  // default behavior inserts newline
-}
+function newline() { /* browser default */ }
 
 function send() {
   const msg = text.value.trim()
   if (!msg) return
   emit('send', msg)
   text.value = ''
-  textareaHeight.value = 'auto'
+  if (textareaRef.value) textareaRef.value.style.height = 'auto'
 }
 </script>
+
+<style scoped>
+.chat-input-wrap {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  border-radius: 1rem;
+  border: 1px solid rgb(229 231 235);
+  background: rgb(249 250 251);
+  transition: border-color 200ms;
+}
+.chat-input-wrap:focus-within {
+  border-color: rgb(96 165 250);
+}
+
+:root.dark .chat-input-wrap {
+  border-color: rgb(75 85 99);
+  background: rgb(31 41 55);
+}
+:root.dark .chat-input-wrap:focus-within {
+  border-color: rgb(59 130 246);
+}
+
+.chat-input-wrap__textarea {
+  flex: 1;
+  min-width: 0;
+  resize: none;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: rgb(17 24 39);
+  max-height: 25vh;           /* ← percentage of viewport, not px */
+  overflow-y: auto;
+}
+:root.dark .chat-input-wrap__textarea { color: rgb(243 244 246); }
+.chat-input-wrap__textarea::placeholder { color: rgb(156 163 175); }
+:root.dark .chat-input-wrap__textarea::placeholder { color: rgb(107 114 128); }
+.chat-input-wrap__textarea:disabled { opacity: 0.5; }
+
+.chat-input-wrap__send {
+  flex-shrink: 0;
+  padding: 0.5rem;
+  margin: 0.25rem;
+  border-radius: 0.75rem;
+  color: rgb(156 163 175);
+  transition: all 200ms;
+}
+.chat-input-wrap__send--active {
+  background: rgb(37 99 235);
+  color: white;
+}
+.chat-input-wrap__send--active:hover {
+  background: rgb(29 78 216);
+}
+.chat-input-wrap__send:disabled {
+  cursor: not-allowed;
+}
+</style>
