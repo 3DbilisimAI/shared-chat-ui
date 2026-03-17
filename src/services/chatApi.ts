@@ -28,6 +28,7 @@ export interface ToolCall {
   row_count?: number
   truncated?: boolean
   error?: string
+  reasoning?: string
 }
 
 export interface ChatStreamRequest {
@@ -77,6 +78,11 @@ export interface SqlTokenEvent {
   token: string
 }
 
+export interface ReasoningTokenEvent {
+  type: 'reasoning_token'
+  token: string
+}
+
 export interface TokenEvent {
   type: 'token'
   token: string
@@ -102,6 +108,7 @@ export type ChatSSEEvent =
   | SqlGeneratedEvent
   | QueryResultEvent
   | SqlTokenEvent
+  | ReasoningTokenEvent
   | TokenEvent
   | DoneEvent
   | ErrorEvent
@@ -113,6 +120,7 @@ export interface SSECallbacks {
   onSqlGenerated?: (event: SqlGeneratedEvent) => void
   onQueryResult?: (event: QueryResultEvent) => void
   onSqlToken?: (event: SqlTokenEvent) => void
+  onReasoningToken?: (event: ReasoningTokenEvent) => void
   onToken?: (event: TokenEvent) => void
   onDone?: (event: DoneEvent) => void
   onError?: (event: ErrorEvent) => void
@@ -170,8 +178,9 @@ export async function streamChat(
           case 'tool_result':  callbacks.onToolResult?.(event);   break
           case 'sql_generated': callbacks.onSqlGenerated?.(event); break
           case 'query_result': callbacks.onQueryResult?.(event);  break
-          case 'sql_token':    callbacks.onSqlToken?.(event);     break
-          case 'token':        callbacks.onToken?.(event);        break
+          case 'sql_token':       callbacks.onSqlToken?.(event);        break
+          case 'reasoning_token': callbacks.onReasoningToken?.(event);  break
+          case 'token':           callbacks.onToken?.(event);           break
           case 'done':         callbacks.onDone?.(event);         break
           case 'error':        callbacks.onError?.(event);        break
         }

@@ -12,6 +12,17 @@
 
     <!-- Body -->
     <div v-if="open" class="tool-block__body">
+      <!-- Reasoning block -->
+      <div v-if="reasoning" class="tool-block__section">
+        <button class="tool-block__reasoning-header" @click.stop="reasoningOpen = !reasoningOpen">
+          <span class="tool-block__reasoning-label">🧠 Düşünme süreci</span>
+          <ChevronDownIcon :class="['tool-block__reasoning-chevron', { 'tool-block__reasoning-chevron--open': reasoningOpen }]" />
+        </button>
+        <div v-if="reasoningOpen" class="tool-block__reasoning-body">
+          <pre class="tool-block__reasoning-text">{{ reasoning }}</pre>
+        </div>
+      </div>
+
       <!-- SQL block -->
       <div v-if="sql" class="tool-block__section">
         <div class="tool-block__section-header">
@@ -26,7 +37,7 @@
       <!-- Error -->
       <div v-if="error" class="tool-block__section">
         <p class="tool-block__section-label">Hata</p>
-        <pre class="tool-block__error-text">{{ error }}</pre>
+        <pre class="tool-block__error">{{ error }}</pre>
       </div>
 
       <!-- Results table -->
@@ -94,9 +105,11 @@ const props = defineProps<{
   rowCount?: number
   truncated?: boolean
   error?: string
+  reasoning?: string
 }>()
 
 const open = ref(true)
+const reasoningOpen = ref(false)
 const sqlCopied = ref(false)
 
 // Search / sort state
@@ -179,6 +192,19 @@ const highlightedSql = computed(() => {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
+
+  // Table name color-coding (before keyword highlighting, while text is still plain)
+  const tableColorMap = new Map<string, number>()
+  let tableColorCounter = 0
+  s = s.replace(/\b(FROM|JOIN)\s+(\w+)/gi, (_match, keyword, tableName) => {
+    const tblKey = tableName.toUpperCase()
+    if (!tableColorMap.has(tblKey)) {
+      tableColorMap.set(tblKey, tableColorCounter % 6)
+      tableColorCounter++
+    }
+    const colorIdx = tableColorMap.get(tblKey)!
+    return `${keyword} <span class="sql-tbl sql-tbl--${colorIdx}">${tableName}</span>`
+  })
 
   // SQL keywords
   const keywords = [
@@ -474,6 +500,18 @@ async function copySql() {
 .tool-block__table tr:hover td { background: rgba(239 246 255 / 0.5); }
 :root.dark .tool-block__table tr:hover td { background: rgba(30 58 138 / 0.1); }
 
+/* ── Table name highlights ── */
+.tool-block__code :deep(.sql-tbl) {
+  border-radius: 2px;
+  padding: 0 2px;
+}
+.tool-block__code :deep(.sql-tbl--0) { background: rgba(147, 197, 253, 0.15); }
+.tool-block__code :deep(.sql-tbl--1) { background: rgba(167, 243, 208, 0.15); }
+.tool-block__code :deep(.sql-tbl--2) { background: rgba(253, 186, 116, 0.15); }
+.tool-block__code :deep(.sql-tbl--3) { background: rgba(196, 181, 253, 0.15); }
+.tool-block__code :deep(.sql-tbl--4) { background: rgba(252, 165, 165, 0.15); }
+.tool-block__code :deep(.sql-tbl--5) { background: rgba(253, 224, 71, 0.12); }
+
 /* ── Error ── */
 .tool-block__error {
   background: rgba(239 68 68 / 0.1);
@@ -491,5 +529,63 @@ async function copySql() {
   background: rgba(239 68 68 / 0.1);
   border-color: rgba(239 68 68 / 0.25);
   color: rgb(252 165 165);
+}
+
+/* ── Reasoning ── */
+.tool-block__reasoning-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.375rem 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.tool-block__reasoning-label {
+  font-size: 0.75rem;
+  color: rgb(109 40 217);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+:root.dark .tool-block__reasoning-label { color: rgb(167 139 250); }
+
+.tool-block__reasoning-chevron {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+  color: rgb(139 92 246);
+  transition: transform 300ms ease-out;
+}
+.tool-block__reasoning-chevron--open { transform: rotate(180deg); }
+
+.tool-block__reasoning-body {
+  margin-top: 0.375rem;
+  animation: tb-expand 0.2s ease-out;
+}
+
+.tool-block__reasoning-text {
+  background: rgba(237 233 254 / 0.6);
+  border: 1px solid rgba(167 139 250 / 0.3);
+  border-radius: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.75rem;
+  color: rgb(76 29 149);
+  line-height: 1.6;
+  font-family: 'Menlo','Monaco','Courier New',monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 12rem;
+  overflow-y: auto;
+  margin: 0;
+}
+:root.dark .tool-block__reasoning-text {
+  background: rgba(109 40 217 / 0.1);
+  border-color: rgba(167 139 250 / 0.25);
+  color: rgb(221 214 254);
 }
 </style>

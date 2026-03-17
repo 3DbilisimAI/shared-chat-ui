@@ -197,6 +197,14 @@ export function useChatState(options: UseChatStateOptions = {}) {
         scrollToBottom()
       },
 
+      onReasoningToken(e) {
+        const idx = streamingToolCalls.value.length - 1
+        if (idx >= 0) {
+          const tc = streamingToolCalls.value[idx]
+          streamingToolCalls.value[idx] = { ...tc, reasoning: (tc.reasoning || '') + e.token }
+        }
+      },
+
       onSqlToken(e) {
         const idx = streamingToolCalls.value.length - 1
         if (idx >= 0) {
@@ -274,6 +282,7 @@ export function useChatState(options: UseChatStateOptions = {}) {
                 row_count: tc.row_count,
                 truncated: tc.truncated,
                 error: tc.error,
+                reasoning: tc.reasoning,
               }))
             : undefined,
         })
