@@ -26,12 +26,6 @@
       <!-- Error -->
       <div v-if="error" class="tool-block__section">
         <p class="tool-block__section-label">Hata</p>
-        <div class="tool-block__error">{{ error }}</div>
-      </div>
-
-      <!-- Error -->
-      <div v-if="error" class="tool-block__section tool-block__error">
-        <p class="tool-block__section-label">Hata</p>
         <pre class="tool-block__error-text">{{ error }}</pre>
       </div>
 
