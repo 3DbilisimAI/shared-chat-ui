@@ -31,24 +31,52 @@
 
       <!-- Results table -->
       <div v-if="rows && rows.length > 0" class="tool-block__section">
-        <p class="tool-block__section-label">
-          Sonuçlar ({{ rows.length }} satır)
-          <span v-if="truncated" class="tool-block__truncated">(kısaltıldı)</span>
-        </p>
+        <div class="tool-block__table-toolbar">
+          <p class="tool-block__section-label">
+            Sonuçlar
+            <span v-if="truncated" class="tool-block__truncated">(kısaltıldı)</span>
+          </p>
+          <input
+            v-model="searchQuery"
+            class="tool-block__search"
+            type="text"
+            placeholder="Ara..."
+            @input="onSearchInput"
+          />
+        </div>
         <div class="tool-block__table-wrap">
           <table class="tool-block__table">
             <thead>
               <tr>
-                <th v-for="col in columns" :key="col">{{ col }}</th>
+                <th
+                  v-for="col in columns"
+                  :key="col"
+                  class="tool-block__th--sortable"
+                  @click="toggleSort(col)"
+                >
+                  <span class="tool-block__th-content">
+                    {{ col }}
+                    <span class="tool-block__sort-icon">
+                      <span v-if="sortCol === col">{{ sortDir === 'asc' ? '↑' : '↓' }}</span>
+                      <span v-else class="tool-block__sort-idle">⇅</span>
+                    </span>
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(row, i) in rows" :key="i" :class="{ 'tool-block__row--alt': i % 2 === 1 }">
-                <td v-for="col in columns" :key="col">{{ row[col] ?? '' }}</td>
+              <tr v-for="(row, i) in filteredRows" :key="i" :class="{ 'tool-block__row--alt': i % 2 === 1 }">
+                <td v-for="col in columns" :key="col">{{ formatCell(row[col]) }}</td>
+              </tr>
+              <tr v-if="filteredRows.length === 0">
+                <td :colspan="columns.length" class="tool-block__no-results">Sonuç bulunamadı</td>
               </tr>
             </tbody>
           </table>
         </div>
+        <p class="tool-block__row-count">
+          {{ filteredRows.length }} / {{ rows.length }} satır gösteriliyor
+        </p>
       </div>
     </div>
   </div>
@@ -71,9 +99,78 @@ const props = defineProps<{
 const open = ref(true)
 const sqlCopied = ref(false)
 
+// Search / sort state
+const searchQuery = ref('')
+const debouncedSearch = ref('')
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
+
+function onSearchInput() {
+  if (debounceTimer) clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => {
+    debouncedSearch.value = searchQuery.value
+  }, 300)
+}
+
+const sortCol = ref<string | null>(null)
+const sortDir = ref<'asc' | 'desc'>('asc')
+
+function toggleSort(col: string) {
+  if (sortCol.value === col) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortCol.value = col
+    sortDir.value = 'asc'
+  }
+}
+
+function formatCell(val: unknown): string {
+  if (val === null || val === undefined) return ''
+  if (typeof val === 'number') {
+    // Show floats with 2 decimal places; integers as-is
+    return Number.isInteger(val) ? String(val) : val.toFixed(2)
+  }
+  return String(val)
+}
+
 const columns = computed(() => {
   if (!props.rows || props.rows.length === 0) return []
   return Object.keys(props.rows[0])
+})
+
+const filteredRows = computed(() => {
+  if (!props.rows) return []
+  let result = props.rows
+
+  const q = debouncedSearch.value.trim().toLowerCase()
+  if (q) {
+    result = result.filter(row =>
+      columns.value.some(col => {
+        const v = row[col]
+        return v !== null && v !== undefined && String(v).toLowerCase().includes(q)
+      })
+    )
+  }
+
+  if (sortCol.value) {
+    const col = sortCol.value
+    const dir = sortDir.value
+    result = [...result].sort((a, b) => {
+      const va = a[col]
+      const vb = b[col]
+      if (va === null || va === undefined) return 1
+      if (vb === null || vb === undefined) return -1
+      const na = typeof va === 'number' ? va : Number(va)
+      const nb = typeof vb === 'number' ? vb : Number(vb)
+      if (!isNaN(na) && !isNaN(nb)) {
+        return dir === 'asc' ? na - nb : nb - na
+      }
+      const sa = String(va).toLowerCase()
+      const sb = String(vb).toLowerCase()
+      return dir === 'asc' ? sa.localeCompare(sb) : sb.localeCompare(sa)
+    })
+  }
+
+  return result
 })
 
 const highlightedSql = computed(() => {
@@ -257,6 +354,82 @@ async function copySql() {
 }
 .tool-block__code :deep(.sql-cmt) {
   color: rgb(99 119 139);
+  font-style: italic;
+}
+
+/* ── Table toolbar (search + label row) ── */
+.tool-block__table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.tool-block__search {
+  flex-shrink: 0;
+  width: 10rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  border-radius: 0.375rem;
+  border: 1px solid rgb(209 213 219);
+  background: rgb(255 255 255);
+  color: rgb(55 65 81);
+  outline: none;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+.tool-block__search:focus {
+  border-color: rgb(96 165 250);
+  box-shadow: 0 0 0 2px rgba(96 165 250 / 0.2);
+}
+.tool-block__search::placeholder { color: rgb(156 163 175); }
+:root.dark .tool-block__search {
+  background: rgb(17 24 39);
+  border-color: rgb(55 65 81);
+  color: rgb(209 213 219);
+}
+:root.dark .tool-block__search:focus {
+  border-color: rgb(96 165 250);
+}
+
+/* ── Sortable headers ── */
+.tool-block__th--sortable {
+  cursor: pointer;
+  user-select: none;
+}
+.tool-block__th--sortable:hover { background: rgb(243 244 246) !important; }
+:root.dark .tool-block__th--sortable:hover { background: rgb(55 65 81) !important; }
+
+.tool-block__th-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.tool-block__sort-icon {
+  font-size: 0.65rem;
+  line-height: 1;
+  color: rgb(96 165 250);
+}
+.tool-block__sort-idle {
+  color: rgb(156 163 175);
+  font-size: 0.65rem;
+}
+
+/* ── Row count ── */
+.tool-block__row-count {
+  margin-top: 0.375rem;
+  font-size: 0.7rem;
+  color: rgb(107 114 128);
+  text-align: right;
+}
+:root.dark .tool-block__row-count { color: rgb(107 114 128); }
+
+/* ── No results ── */
+.tool-block__no-results {
+  text-align: center;
+  padding: 1rem;
+  color: rgb(156 163 175);
   font-style: italic;
 }
 
