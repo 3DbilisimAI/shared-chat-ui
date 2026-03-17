@@ -17,6 +17,9 @@
       <div class="chat-msg__body">
         <p class="chat-msg__label">Kingslanding</p>
 
+        <!-- Slot for tool blocks (between label and content) -->
+        <slot />
+
         <!-- Typing indicator -->
         <div v-if="isTyping" class="chat-msg__typing">
           <span v-for="i in 3" :key="i" class="chat-msg__dot" :style="{ animationDelay: `${(i - 1) * 0.16}s` }" />
