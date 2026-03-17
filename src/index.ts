@@ -7,3 +7,7 @@ export { default as ChatStatusIndicator } from './components/ChatStatusIndicator
 
 // Services
 export * from './services/chatApi'
+
+// Composables
+export { useChatState } from './composables/useChatState'
+export type { DisplayMessage, UseChatStateOptions } from './composables/useChatState'
