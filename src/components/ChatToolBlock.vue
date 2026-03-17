@@ -29,6 +29,12 @@
         <div class="tool-block__error">{{ error }}</div>
       </div>
 
+      <!-- Error -->
+      <div v-if="error" class="tool-block__section tool-block__error">
+        <p class="tool-block__section-label">Hata</p>
+        <pre class="tool-block__error-text">{{ error }}</pre>
+      </div>
+
       <!-- Results table -->
       <div v-if="rows && rows.length > 0" class="tool-block__section">
         <p class="tool-block__section-label">
@@ -68,7 +74,7 @@ const props = defineProps<{
   error?: string
 }>()
 
-const open = ref(false)
+const open = ref(true)
 const sqlCopied = ref(false)
 
 const columns = computed(() => {
