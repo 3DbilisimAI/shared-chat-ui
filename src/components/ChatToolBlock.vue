@@ -23,6 +23,12 @@
         <pre class="tool-block__code"><code v-html="highlightedSql"></code></pre>
       </div>
 
+      <!-- Error -->
+      <div v-if="error" class="tool-block__section">
+        <p class="tool-block__section-label">Hata</p>
+        <div class="tool-block__error">{{ error }}</div>
+      </div>
+
       <!-- Results table -->
       <div v-if="rows && rows.length > 0" class="tool-block__section">
         <p class="tool-block__section-label">
@@ -59,6 +65,7 @@ const props = defineProps<{
   rows?: Record<string, unknown>[]
   rowCount?: number
   truncated?: boolean
+  error?: string
 }>()
 
 const open = ref(false)
@@ -293,4 +300,23 @@ async function copySql() {
 
 .tool-block__table tr:hover td { background: rgba(239 246 255 / 0.5); }
 :root.dark .tool-block__table tr:hover td { background: rgba(30 58 138 / 0.1); }
+
+/* ── Error ── */
+.tool-block__error {
+  background: rgba(239 68 68 / 0.1);
+  border: 1px solid rgba(239 68 68 / 0.3);
+  border-radius: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.8125rem;
+  color: rgb(185 28 28);
+  line-height: 1.5;
+  font-family: 'Menlo','Monaco','Courier New',monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+:root.dark .tool-block__error {
+  background: rgba(239 68 68 / 0.1);
+  border-color: rgba(239 68 68 / 0.25);
+  color: rgb(252 165 165);
+}
 </style>

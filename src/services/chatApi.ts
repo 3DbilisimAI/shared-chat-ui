@@ -27,6 +27,7 @@ export interface ToolCall {
   rows?: Record<string, unknown>[]
   row_count?: number
   truncated?: boolean
+  error?: string
 }
 
 export interface ChatStreamRequest {
@@ -68,6 +69,7 @@ export interface QueryResultEvent {
   rows: Record<string, unknown>[]
   row_count: number
   truncated?: boolean
+  error?: string
 }
 
 export interface TokenEvent {
