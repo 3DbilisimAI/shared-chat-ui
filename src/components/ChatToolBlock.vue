@@ -10,9 +10,6 @@
       <ChevronDownIcon :class="['tool-block__chevron', { 'tool-block__chevron--open': open }]" />
     </button>
 
-    <!-- Debug: show raw prop data -->
-    <pre style="font-size:10px;background:#1e1e2e;color:#cdd6f4;padding:8px;margin:4px;border-radius:4px;max-height:100px;overflow:auto">rows={{ rows?.length ?? 'undefined' }} | row_count={{ rowCount ?? 'undefined' }} | error={{ error ? 'YES' : 'no' }} | sql={{ sql ? 'YES' : 'no' }}</pre>
-
     <!-- Body -->
     <div v-if="open" class="tool-block__body">
       <!-- SQL block -->
@@ -35,7 +32,7 @@
       <!-- Results table -->
       <div v-if="rows && rows.length > 0" class="tool-block__section">
         <p class="tool-block__section-label">
-          Sonuçlar
+          Sonuçlar ({{ rows.length }} satır)
           <span v-if="truncated" class="tool-block__truncated">(kısaltıldı)</span>
         </p>
         <div class="tool-block__table-wrap">

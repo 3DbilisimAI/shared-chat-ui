@@ -197,6 +197,14 @@ export function useChatState(options: UseChatStateOptions = {}) {
         scrollToBottom()
       },
 
+      onSqlToken(e) {
+        const idx = streamingToolCalls.value.length - 1
+        if (idx >= 0) {
+          const tc = streamingToolCalls.value[idx]
+          streamingToolCalls.value[idx] = { ...tc, sql: (tc.sql || '') + e.token }
+        }
+      },
+
       onSqlGenerated(e) {
         const idx = streamingToolCalls.value.length - 1
         if (idx >= 0) {
