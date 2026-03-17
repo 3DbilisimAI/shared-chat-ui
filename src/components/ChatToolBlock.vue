@@ -20,7 +20,7 @@
             {{ sqlCopied ? 'Kopyalandı!' : 'Kopyala' }}
           </button>
         </div>
-        <pre class="tool-block__code"><code>{{ sql }}</code></pre>
+        <pre class="tool-block__code"><code v-html="highlightedSql"></code></pre>
       </div>
 
       <!-- Results table -->
@@ -67,6 +67,42 @@ const sqlCopied = ref(false)
 const columns = computed(() => {
   if (!props.rows || props.rows.length === 0) return []
   return Object.keys(props.rows[0])
+})
+
+const highlightedSql = computed(() => {
+  if (!props.sql) return ''
+  let s = props.sql
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+
+  // SQL keywords
+  const keywords = [
+    'SELECT', 'FROM', 'WHERE', 'AND', 'OR', 'NOT', 'IN', 'IS', 'NULL',
+    'JOIN', 'LEFT', 'RIGHT', 'INNER', 'OUTER', 'FULL', 'CROSS', 'ON',
+    'GROUP\\s+BY', 'ORDER\\s+BY', 'HAVING', 'LIMIT', 'OFFSET',
+    'INSERT', 'INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE',
+    'CREATE', 'ALTER', 'DROP', 'TABLE', 'INDEX', 'VIEW',
+    'AS', 'DISTINCT', 'ALL', 'EXISTS', 'BETWEEN', 'LIKE', 'ILIKE',
+    'CASE', 'WHEN', 'THEN', 'ELSE', 'END',
+    'ASC', 'DESC', 'UNION', 'EXCEPT', 'INTERSECT',
+    'COUNT', 'SUM', 'AVG', 'MIN', 'MAX',
+    'WITH', 'RECURSIVE', 'PARTITION\\s+BY', 'OVER',
+    'TRUE', 'FALSE', 'CAST', 'COALESCE', 'NULLIF',
+  ]
+  const kwRegex = new RegExp(`\\b(${keywords.join('|')})\\b`, 'gi')
+  s = s.replace(kwRegex, '<span class="sql-kw">$1</span>')
+
+  // Strings (single-quoted)
+  s = s.replace(/'([^']*)'/g, '<span class="sql-str">\'$1\'</span>')
+
+  // Numbers
+  s = s.replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="sql-num">$1</span>')
+
+  // Comments (-- single line)
+  s = s.replace(/(--.*)/g, '<span class="sql-cmt">$1</span>')
+
+  return s
 })
 
 async function copySql() {
@@ -198,6 +234,23 @@ async function copySql() {
   overflow-x: auto; font-size: 0.75rem; line-height: 1.6;
   margin: 0;
   font-family: 'Menlo','Monaco','Courier New',monospace;
+}
+
+/* ── SQL Syntax Highlighting ── */
+.tool-block__code :deep(.sql-kw) {
+  color: rgb(199 146 234);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.tool-block__code :deep(.sql-str) {
+  color: rgb(195 232 141);
+}
+.tool-block__code :deep(.sql-num) {
+  color: rgb(247 140 108);
+}
+.tool-block__code :deep(.sql-cmt) {
+  color: rgb(99 119 139);
+  font-style: italic;
 }
 
 /* ── Table ── */

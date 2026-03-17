@@ -1,33 +1,75 @@
 <template>
   <div class="chat-sidebar">
-    <!-- Header: close + new chat -->
+    <!-- Header: new chat + close -->
     <div class="chat-sidebar__header">
       <button class="chat-sidebar__new-btn" @click="emit('new-thread')">
         <PlusIcon class="w-4 h-4" />
         Yeni Sohbet
       </button>
+      <button class="chat-sidebar__collapse-btn" @click="emit('close')" title="Menüyü kapat">
+        <ChevronDoubleLeftIcon class="w-4 h-4" />
+      </button>
     </div>
 
     <!-- Thread list -->
     <div class="chat-sidebar__list">
-      <div
-        v-for="thread in threads"
-        :key="thread.thread_id"
-        :class="['chat-sidebar__thread', { 'chat-sidebar__thread--active': thread.thread_id === activeThreadId }]"
-        @click="emit('select-thread', thread.thread_id)"
-      >
-        <ChatBubbleLeftIcon class="w-4 h-4 flex-shrink-0 opacity-60" />
-        <span class="chat-sidebar__thread-title">{{ thread.title || 'Sohbet' }}</span>
-        <span v-if="thread.updated_at" class="chat-sidebar__thread-date">
-          {{ formatDate(thread.updated_at) }}
-        </span>
-        <button
-          class="chat-sidebar__thread-delete"
-          @click.stop="emit('delete-thread', thread.thread_id)"
+      <!-- Pinned section -->
+      <template v-if="pinnedThreads.length > 0">
+        <div class="chat-sidebar__group-label">
+          <BookmarkIcon class="w-3 h-3" />
+          Sabitlenmiş
+        </div>
+        <div
+          v-for="thread in pinnedThreads"
+          :key="'pin-' + thread.thread_id"
+          :class="['chat-sidebar__thread', { 'chat-sidebar__thread--active': thread.thread_id === activeThreadId }]"
+          @click="emit('select-thread', thread.thread_id)"
         >
-          <TrashIcon class="w-3.5 h-3.5" />
-        </button>
-      </div>
+          <ChatBubbleLeftIcon class="w-4 h-4 flex-shrink-0 opacity-60" />
+          <span class="chat-sidebar__thread-title">{{ thread.title || 'Sohbet' }}</span>
+          <div class="chat-sidebar__thread-actions">
+            <button class="chat-sidebar__thread-action" @click.stop="togglePin(thread.thread_id)" title="Sabitlemeyi kaldır">
+              <BookmarkSlashIcon class="w-3 h-3" />
+            </button>
+            <button class="chat-sidebar__thread-action" @click.stop="shareThread(thread.thread_id)" title="Paylaş">
+              <ShareIcon class="w-3 h-3" />
+            </button>
+            <button class="chat-sidebar__thread-action chat-sidebar__thread-action--danger" @click.stop="emit('delete-thread', thread.thread_id)" title="Sil">
+              <TrashIcon class="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      </template>
+
+      <!-- Date groups -->
+      <template v-for="group in dateGroups" :key="group.label">
+        <template v-if="group.threads.length > 0">
+          <div class="chat-sidebar__group-label">{{ group.label }}</div>
+          <div
+            v-for="thread in group.threads"
+            :key="thread.thread_id"
+            :class="['chat-sidebar__thread', { 'chat-sidebar__thread--active': thread.thread_id === activeThreadId }]"
+            @click="emit('select-thread', thread.thread_id)"
+          >
+            <ChatBubbleLeftIcon class="w-4 h-4 flex-shrink-0 opacity-60" />
+            <span class="chat-sidebar__thread-title">{{ thread.title || 'Sohbet' }}</span>
+            <span v-if="thread.updated_at" class="chat-sidebar__thread-date">
+              {{ formatTime(thread.updated_at) }}
+            </span>
+            <div class="chat-sidebar__thread-actions">
+              <button class="chat-sidebar__thread-action" @click.stop="togglePin(thread.thread_id)" title="Sabitle">
+                <BookmarkIcon class="w-3 h-3" />
+              </button>
+              <button class="chat-sidebar__thread-action" @click.stop="shareThread(thread.thread_id)" title="Paylaş">
+                <ShareIcon class="w-3 h-3" />
+              </button>
+              <button class="chat-sidebar__thread-action chat-sidebar__thread-action--danger" @click.stop="emit('delete-thread', thread.thread_id)" title="Sil">
+                <TrashIcon class="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        </template>
+      </template>
 
       <p v-if="threads.length === 0" class="chat-sidebar__empty">
         Henüz sohbet yok
@@ -36,9 +78,6 @@
 
     <!-- Footer -->
     <div class="chat-sidebar__footer">
-      <button class="chat-sidebar__collapse-btn" @click="emit('close')">
-        <ChevronDoubleLeftIcon class="w-4 h-4" />
-      </button>
       <div class="chat-sidebar__brand">
         <div class="chat-sidebar__brand-icon">{{ brandInitial }}</div>
         <span class="chat-sidebar__brand-name">{{ brandName }}</span>
@@ -48,9 +87,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { PlusIcon, TrashIcon, ChatBubbleLeftIcon, ChevronDoubleLeftIcon } from '@heroicons/vue/24/solid'
+import { computed, ref, onMounted } from 'vue'
+import { PlusIcon, TrashIcon, ChatBubbleLeftIcon, ChevronDoubleLeftIcon, ShareIcon, BookmarkIcon } from '@heroicons/vue/24/solid'
+import { BookmarkSlashIcon } from '@heroicons/vue/24/outline'
 import type { Thread } from '../services/chatApi'
+
+const PINS_KEY = 'chat-pinned-threads'
 
 const props = withDefaults(defineProps<{
   threads: Thread[]
@@ -67,17 +109,71 @@ const emit = defineEmits<{
   'close': []
 }>()
 
+const pinnedIds = ref<Set<string>>(new Set())
+
+onMounted(() => {
+  try {
+    const stored = localStorage.getItem(PINS_KEY)
+    if (stored) pinnedIds.value = new Set(JSON.parse(stored))
+  } catch { /* ignore */ }
+})
+
+function savePins() {
+  localStorage.setItem(PINS_KEY, JSON.stringify([...pinnedIds.value]))
+}
+
+function togglePin(threadId: string) {
+  if (pinnedIds.value.has(threadId)) {
+    pinnedIds.value.delete(threadId)
+  } else {
+    pinnedIds.value.add(threadId)
+  }
+  pinnedIds.value = new Set(pinnedIds.value) // trigger reactivity
+  savePins()
+}
+
 const brandInitial = computed(() => props.brandName.charAt(0).toUpperCase())
 
-function formatDate(dateStr: string): string {
+const pinnedThreads = computed(() =>
+  props.threads.filter(t => pinnedIds.value.has(t.thread_id))
+)
+
+const unpinnedThreads = computed(() =>
+  props.threads.filter(t => !pinnedIds.value.has(t.thread_id))
+)
+
+const dateGroups = computed(() => {
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const yesterday = new Date(today.getTime() - 86400000)
+  const week = new Date(today.getTime() - 7 * 86400000)
+
+  const groups = [
+    { label: 'Bugün', threads: [] as Thread[] },
+    { label: 'Dün', threads: [] as Thread[] },
+    { label: 'Son 7 gün', threads: [] as Thread[] },
+    { label: 'Daha eski', threads: [] as Thread[] },
+  ]
+
+  for (const thread of unpinnedThreads.value) {
+    const d = thread.updated_at ? new Date(thread.updated_at) : new Date(0)
+    if (d >= today) groups[0].threads.push(thread)
+    else if (d >= yesterday) groups[1].threads.push(thread)
+    else if (d >= week) groups[2].threads.push(thread)
+    else groups[3].threads.push(thread)
+  }
+
+  return groups
+})
+
+function shareThread(threadId: string) {
+  const url = `${window.location.origin}/chat/${threadId}`
+  navigator.clipboard.writeText(url).catch(() => {})
+}
+
+function formatTime(dateStr: string): string {
   try {
-    const d = new Date(dateStr)
-    const now = new Date()
-    const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000)
-    if (diffDays === 0) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    if (diffDays === 1) return 'Dün'
-    if (diffDays < 7) return `${diffDays}g`
-    return d.toLocaleDateString([], { day: 'numeric', month: 'short' })
+    return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   } catch { return '' }
 }
 </script>
@@ -95,10 +191,15 @@ function formatDate(dateStr: string): string {
   font-size: 0.875rem;
 }
 
-.chat-sidebar__header { padding: 0.5rem 0.75rem; }
+.chat-sidebar__header {
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 
 .chat-sidebar__new-btn {
-  width: 100%;
+  flex: 1;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -114,6 +215,32 @@ function formatDate(dateStr: string): string {
   border-color: rgb(75 85 99);
 }
 
+.chat-sidebar__collapse-btn {
+  padding: 0.375rem;
+  border-radius: 0.5rem;
+  color: rgb(107 114 128);
+  transition: all 150ms;
+  flex-shrink: 0;
+}
+.chat-sidebar__collapse-btn:hover {
+  background: rgb(31 41 55);
+  color: rgb(209 213 219);
+}
+
+/* ── Groups ── */
+.chat-sidebar__group-label {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgb(107 114 128);
+}
+
+/* ── Thread list ── */
 .chat-sidebar__list {
   flex: 1;
   overflow-y: auto;
@@ -153,16 +280,22 @@ function formatDate(dateStr: string): string {
 }
 .chat-sidebar__thread:hover .chat-sidebar__thread-date { display: none; }
 
-.chat-sidebar__thread-delete {
+.chat-sidebar__thread-actions {
   display: none;
+  align-items: center;
+  gap: 0.125rem;
   flex-shrink: 0;
+}
+.chat-sidebar__thread:hover .chat-sidebar__thread-actions { display: flex; }
+
+.chat-sidebar__thread-action {
   padding: 0.25rem;
   border-radius: 0.375rem;
   color: rgb(107 114 128);
   transition: all 150ms;
 }
-.chat-sidebar__thread:hover .chat-sidebar__thread-delete { display: flex; }
-.chat-sidebar__thread-delete:hover { color: rgb(248 113 113); background: rgb(55 65 81); }
+.chat-sidebar__thread-action:hover { color: rgb(209 213 219); background: rgb(55 65 81); }
+.chat-sidebar__thread-action--danger:hover { color: rgb(248 113 113); }
 
 .chat-sidebar__empty {
   text-align: center;
@@ -171,27 +304,13 @@ function formatDate(dateStr: string): string {
   padding: 2rem 0;
 }
 
+/* ── Footer ── */
 .chat-sidebar__footer {
   padding: 0.5rem 0.75rem;
   border-top: 1px solid rgb(31 41 55);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.chat-sidebar__collapse-btn {
-  padding: 0.375rem;
-  border-radius: 0.5rem;
-  color: rgb(107 114 128);
-  transition: all 150ms;
-}
-.chat-sidebar__collapse-btn:hover {
-  background: rgb(31 41 55);
-  color: rgb(209 213 219);
 }
 
 .chat-sidebar__brand {
-  flex: 1;
   display: flex;
   align-items: center;
   gap: 0.5rem;

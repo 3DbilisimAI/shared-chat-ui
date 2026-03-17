@@ -117,7 +117,12 @@ async function copyContent() {
   gap: 0.5rem;
   max-width: 80%;
 }
-.chat-msg__row--reverse { flex-direction: row-reverse; margin-left: auto; max-width: 60%; }
+.chat-msg__row--reverse {
+  flex-direction: row-reverse;
+  margin-left: auto;
+  max-width: none;
+  width: fit-content;
+}
 .chat-msg--user .chat-msg__row { margin-left: auto; }
 
 .chat-msg__body { flex: 1; min-width: 0; }
